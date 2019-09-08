@@ -2,44 +2,16 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-<title>IIS Windows</title>
-<style type="text/css">
-<!--
-body {
-	color:#f0f0f0;
-	background-color:#070f07;
-	margin:0;
-}
-
-.ghost-button {
-    color: #00330f;
-}
-
-#container {
-	margin-left:auto;
-	margin-right:auto;
-	text-align:center;
-	}
-
-a img {
-	border:none;
-}
-
-.grid-container {
-  display: grid;
-  grid-template-columns: auto auto auto auto auto auto auto auto ;
-}
-
--->
-</style>
+<title>Randoji</title>
+<link href="styles/randoji.css" rel="stylesheet">
 </head>
 <body>
 	<script src="script/randoji.js"></script>
 
-	<input type="button" onclick="randomizeAll(2, 8)" class="ghost-button" value="randomize"/>
-	<br/>
+	<input type="button" onclick="randomizeAndCreateDIVs(gridMoji, 10, 50)" class="ghost-button" value="randomize"/>
+		<br/>
 	<hr/>
-	<div id="gridMoji" class="grid-container">
+	<div id="gridMoji" class="grid-container scrolling-wrapper">
 		<div id="entry00">&#x1F981;</div>
 		<div id="entry01">&#x1F981;</div>
 		<div id="entry02">&#x1F981;</div>
@@ -59,5 +31,18 @@ a img {
 		<div id="entry17">&#x1F981;</div>		
 	</div>
 <div id="list_output"><i>list output goes here</i></div>
+<br/>
+
+<input type="button" onclick="drawTest()" class="ghost-button" value="drawTest()"/>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/camanjs/4.0.0/caman.full.min.js"></script>
+<input type="button" onclick="testCaman()" class="ghost-button" value="testCaman()"/>
+
+<br/>
+<br/>
+<br/>
+<canvas height="384" width="384" id="canvas"/>
+<canvas height="384" width="384" id="back_buffer" style="visibility:hidden"/>
+<img id="joshymage"/>
+<canvas id="original" width="100" height="100" style="position:absolute;top:800px;left:50px;"></canvas>
 </body>
 </html>
