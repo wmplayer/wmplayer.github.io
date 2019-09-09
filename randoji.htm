@@ -7,6 +7,7 @@
 <link href="styles/Randoji.css" rel="stylesheet" />
 </head>
 <body>
+	<script src="script/emoji_json.js"></script>
 	<script src="script/randoji.js"></script>
 
 	<input type="button" onclick="randomizeAndCreateDIVs(gridMoji, 10, 50)" class="ghost-button" value="randomize"/>
@@ -29,18 +30,22 @@
 		<div id="entry14">&#x1F981;</div>
 		<div id="entry15">&#x1F981;</div>
 		<div id="entry16">&#x1F981;</div>
-		<div id="entry17">&#x1F981;</div>		
+		<div id="entry17">&#x1F981;</div>
+		<span title="foo bar">&#x267B;</span>	
 	</div>
 <div id="list_output"><i>list output goes here</i></div>
 <br/>
 
 <input type="button" onclick="drawTest()" class="ghost-button" value="drawTest()"/>
+<!--
 <script src="http://cdnjs.cloudflare.com/ajax/libs/camanjs/4.0.0/caman.full.min.js"></script>
 <input type="button" onclick="testCaman()" class="ghost-button" value="testCaman()"/>
-
+-->
+<hr/>
+<input type="button" onclick="allmoji(allmoji_host);" class="ghost-button" value="allmoji(allmoji_host)"/>
 <br/>
-<br/>
-<br/>
+<div id="allmoji_host" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;font-size: 128px;">all emoji will go here</div>
+<hr/>
 <canvas height="384" width="384" id="canvas"/>
 <canvas height="384" width="384" id="back_buffer" style="visibility:hidden"/>
 <img id="joshymage"/>

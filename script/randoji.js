@@ -41,6 +41,38 @@ function pairedRangesRandom(pairs)
     return pairs[subIndex] + (randomIndexIntoTotalCount - skippedTotal);
 }
 
+//function singleToHtml(unicodeValueAsString, )
+
+function codewrap(codeval)
+{
+    return "&#x" + codeval + ";";
+}
+
+function codes(codestring)
+{
+    let retval = "";
+    if (codestring.indexOf(" ") != -1)
+    {
+        let subcodes = codestring.split(" ");
+        for (let j in subcodes)
+        {
+            retval += codewrap(subcodes[j]);
+        }
+        return retval;
+    }
+    return codewrap(codestring);
+}
+
+function allmoji(host_div)
+{
+    let fullHTML = "";
+    for (let j = 0; j < g_emoji_list.length; j++)
+    {
+        fullHTML += '<span title="' + g_emoji_list[j]["name"] + '">' + codes(g_emoji_list[j]["codes"]) + '</span>';
+    }
+    host_div.innerHTML = fullHTML;
+}
+
 function testCaman()
 {
     Caman("#canvas", function () {
@@ -169,5 +201,3 @@ function listFromString(rawString)
     console.log(document.toString());
     return list[Math.floor(Math.random()*list.length)];
 }
-
-
