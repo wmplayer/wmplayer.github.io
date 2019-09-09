@@ -1,3 +1,5 @@
+// Copyright 2019 wmplayer
+
 function randoji()
 {
     let num = pairedRangesRandom([0x1F980, 0x1F997, 0x1F9D8, 0x1F9DF]).toString(16);
