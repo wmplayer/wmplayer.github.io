@@ -31,24 +31,34 @@
 		<div id="entry15">&#x1F981;</div>
 		<div id="entry16">&#x1F981;</div>
 		<div id="entry17">&#x1F981;</div>
-		<span title="foo bar">&#x267B;</span>	
+		<span class="jspan" title="foo bar">&#x267B;</span>	
 	</div>
 <div id="list_output"><i>list output goes here</i></div>
 <br/>
 
 <input type="button" onclick="drawTest()" class="ghost-button" value="drawTest()"/>
-<!--
+<input type="button" onclick="drawEyes(Xs)" class="ghost-button" value="drawEyes()"/>
+
+
 <script src="http://cdnjs.cloudflare.com/ajax/libs/camanjs/4.0.0/caman.full.min.js"></script>
 <input type="button" onclick="testCaman()" class="ghost-button" value="testCaman()"/>
--->
+
 <hr/>
+
+
 <input type="button" onclick="allmoji(allmoji_host);" class="ghost-button" value="allmoji(allmoji_host)"/>
 <br/>
-<div id="allmoji_host" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;font-size: 128px;">all emoji will go here</div>
+<div id="allmoji_host" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;font-size: 128px;">emoji</div>
 <hr/>
 <canvas height="384" width="384" id="canvas"/>
 <canvas height="384" width="384" id="back_buffer" style="visibility:hidden"/>
 <img id="joshymage"/>
 <canvas id="original" width="100" height="100" style="position:absolute;top:800px;left:50px;"></canvas>
+
+<p id = "touchgrounds" style="font-size: 300px;">
+	<span class="jspan" id="sp1">.</span><span class="jspan" id="sp2">.</span><span class="jspan" id="sp3">.</span><span class="jspan" id="sp4">.</span><span class="jspan" id="sp5">.</span>
+	<br/>
+	<span class="jspan" id="sp1">.</span><span class="jspan" id="sp2">.</span><span class="jspan" id="sp3">.</span><span class="jspan" id="sp4">.</span><span class="jspan" id="sp5">.</span>
+</p>
 </body>
 </html>

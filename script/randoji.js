@@ -76,12 +76,9 @@ function allmoji(host_div)
 function testCaman()
 {
     Caman("#canvas", function () {
-        // // Explicitly give the R, G, and B values of the
-        // // color to shift towards.
-        
-        // // Arguments: (R, G, B, strength)
-        this.resetOriginalPixelData();
 
+        this.resetOriginalPixelData();
+        /*
         this.newLayer(function () {
             // Change the blending mode
             this.setBlendingMode("multiply");
@@ -91,7 +88,7 @@ function testCaman()
         
             // Now we can *either* fill this layer with a
             // solid color...
-            this.fillColor('#159915');
+            //this.fillColor('#159915');
 
             // ... or we can copy the contents of the parent
             // layer to this one.
@@ -102,10 +99,12 @@ function testCaman()
             this.filter.brightness(10);
             this.filter.contrast(20);
             });
+        */
+         this.render();
 
-        // this.render();
+        // // Arguments: (R, G, B, strength)
+        //this.colorize(25, 180, 25, 190).render();
 
-        this.colorize(25, 180, 25, 10).render();
     });
 }
 
@@ -137,6 +136,54 @@ function drawTest()
     // var img = convertCanvasToImage(cback);
     // var jm = document.getElementById("joshymage");
     // jm.image = img;
+}
+
+let Xs = [0, 0, 0, 0, 0,
+          0, 0, 0, 3, 7,
+          0, 0, 0, 7, 9,];
+
+function lineToXY(lineIn)
+{
+    let outval = [];
+    for (let y = 0; y < 3; y++)
+    {
+        outval [y] = [0, 0, 0, 0, 0];
+        for (let x = 0; x < 5; x++)
+        {
+            outval[y][x] = Xs[y * 5 + x];
+        }
+    }
+    return outval;
+}
+
+function drawEyes(x,y){
+    var c = document.getElementById("canvas");
+    var ctx = c.getContext("2d");
+    //ctx.fillRect(0, 0, c.width, c.height);
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.font = "normal 300px Segoe UI";
+    ctx.fillStyle = "#FF0000";
+
+    elem=document.createElement('p')
+    elem.innerText = ".";
+
+    let xy = lineToXY(Xs);
+    for (let y=0; y<3; y++)
+    {
+        for (let x=0; x<5; x++)
+        {
+            let thisval = xy[y][x];
+            let thischar = thisval.toString(16);
+            ctx.fillStyle = "#" + thischar + "00000";
+            let yheight = 80;
+            let xwidth = 160;
+            let topoffset = 40;
+            ctx.fillText(elem.innerHTML, x * 40, topoffset + y * 40);
+            ctx.fillText(elem.innerHTML, x * 40, topoffset + yheight + (3-y) * 40);  
+            ctx.fillText(elem.innerHTML, xwidth + (5-x) * 40, topoffset + y * 40);  
+            ctx.fillText(elem.innerHTML, xwidth + (5-x) * 40, topoffset + yheight + (3-y) * 40);                   
+        }
+    }
 }
 
 function randomizeAll(rowMax, colMax)
