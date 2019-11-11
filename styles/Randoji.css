@@ -21,7 +21,7 @@ a img {
 .grid-container {
   display: grid;
   grid-template-columns:auto auto auto auto auto auto auto auto;
-  background-color: #300505
+  /*background-color: #300505*/
 }
 
 .scrolling-wrapper {

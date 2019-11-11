@@ -41,8 +41,6 @@ function pairedRangesRandom(pairs)
     return pairs[subIndex] + (randomIndexIntoTotalCount - skippedTotal);
 }
 
-//function singleToHtml(unicodeValueAsString, )
-
 function codewrap(codeval)
 {
     return "&#x" + codeval + ";";
@@ -73,105 +71,183 @@ function allmoji(host_div)
     host_div.innerHTML = fullHTML;
 }
 
-function testCaman()
-{
-    Caman("#canvas", function () {
-
-        this.resetOriginalPixelData();
-        /*
-        this.newLayer(function () {
-            // Change the blending mode
-            this.setBlendingMode("multiply");
-        
-            // Change the opacity of this layer
-            this.opacity(30);
-        
-            // Now we can *either* fill this layer with a
-            // solid color...
-            //this.fillColor('#159915');
-
-            // ... or we can copy the contents of the parent
-            // layer to this one.
-            this.copyParent();
-        
-            // Now, we can call any filter function though the
-            // filter object.
-            this.filter.brightness(10);
-            this.filter.contrast(20);
-            });
-        */
-         this.render();
-
-        // // Arguments: (R, G, B, strength)
-        //this.colorize(25, 180, 25, 190).render();
-
-    });
-}
-
 function convertCanvasToImage(canvas) {
     var image = new Image();
     image.src = canvas.toDataURL("image/png");
     return image;
 }
 
-function drawTest()
-{
-    var c = document.getElementById("canvas");
+function drawMojiToFill(c, moji){
     var ctx = c.getContext("2d");
-    //ctx.fillStyle = "#909090";
-    //ctx.fillRect(0, 0, c.width, c.height);
     ctx.clearRect(0, 0, c.width, c.height);
-    ctx.font = "normal 300px Segoe UI";
-    let rj = randoji();
+    let fudge = Math.floor(c.width * 0.2);
+    let fontSize = c.width - fudge;
+    ctx.font = "normal " + fontSize + "px Segoe UI";
 
-    elem=document.createElement('p')
-    elem.innerHTML = randoji();
-    ctx.fillText(elem.innerHTML, -16, 280);
-
-    // let cback = document.getElementById("back_buffer");
-    // let cbackctx = cback.getContext("2d");
-    // cbackctx.font = "normal 384px Segoe UI";
-    // cbackctx.fillText(elem.innerHTML, -90, 384);
-
-    // var img = convertCanvasToImage(cback);
-    // var jm = document.getElementById("joshymage");
-    // jm.image = img;
+    let elem = document.createElement('p')
+    elem.innerHTML = moji;
+    ctx.fillText(elem.innerHTML, -fudge * 0.5, fontSize);
+    return ctx.getImageData(0, 0, c.width, c.height);
 }
 
-let Xs = [0, 0, 0, 0, 0,
-          0, 0, 0, 3, 7,
-          0, 0, 0, 7, 9,];
 
-function lineToXY(lineIn)
+function drawLetter(ctx, fillStyle, x, y, letterSize, zoom, letter)
 {
-    let outval = [];
-    for (let y = 0; y < 3; y++)
+    ctx.font = "normal " + Math.round(letterSize * zoom) + "px Segoe UI";
+    ctx.fillStyle = fillStyle; // e.g. - "#FF0000";
+    elem=document.createElement('p')
+    elem.innerText = letter;
+    ctx.fillText(elem.innerHTML, x, y);
+}
+var g_lastHex = "";
+var spewvals = new Array();
+function drawPixels(imageDataSource, srcWidth, srcHeight, canvasDestination, drawSize, drawType)
+{
+    let ctx = canvasDestination.getContext("2d");
+    var char = ".";
+    for (let y = 0; y < srcHeight; y++)
     {
-        outval [y] = [0, 0, 0, 0, 0];
-        for (let x = 0; x < 5; x++)
+        for (let x = 0; x < srcWidth; x++)
         {
-            outval[y][x] = Xs[y * 5 + x];
+            let i = 4 * (srcWidth * y + x);
+            if (imageDataSource[i+3] == 0) continue;
+            var fillStyle = "rgba(" + imageDataSource[i] + ", " + imageDataSource[i+1] + ", " + imageDataSource[i+2] + ", " + imageDataSource[i+3] / 255.0 +  ")";
+
+            if (drawType == "squares"){
+                ctx.fillStyle = hexVal;
+                ctx.fillRect(x*drawSize, y*drawSize, drawSize, drawSize);
+            }
+            else{
+                let a = imageDataSource[i+3];
+                if (a != 0)
+                {
+                    spewvals[spewvals.length] = a;
+                    if (spewvals.length >= 10)
+                    {
+                        console.log(spewvals.toString());
+                        spewvals = new Array();
+                    }
+                }
+                drawLetter(ctx, fillStyle, x*drawSize, y*drawSize, drawSize, 8.0, char);
+            }
         }
     }
-    return outval;
 }
 
-function drawEyes(x,y){
+function drawTest()
+{
+    let moj = randoji();
+    let lilCanvas = document.getElementById("canvasA");
+    let lilPixels = drawMojiToFill(lilCanvas, moj);
+    let destiCan = document.getElementById("canvas");
+    destiCan.width = 1024;
+    destiCan.height = 1024;
+    destiCan.getContext("2d").clearRect(0, 0, destiCan.width, destiCan.height);
+    drawPixels(lilPixels.data, lilCanvas.width, lilCanvas.height, destiCan, 32, "dots");
+}
+
+function draw() {
+    var lilCanvas = document.getElementById('canvasA');
+    var ctx = lilCanvas.getContext('2d');
+    ctx.drawImage(this, 0, 0, this.width, this.height, 0, 0, lilCanvas.width, lilCanvas.height);
+    let lilPixels = ctx.getImageData(0, 0, lilCanvas.width, lilCanvas.height);
+    let bigCanvas = document.getElementById("canvas");
+    bigCanvas.height = 1024;
+    bigCanvas.width = 1024;
+    drawPixels(lilPixels.data, lilCanvas.width, lilCanvas.height, bigCanvas, 16, "dots"); 
+}
+
+function failed(){
+    console.log("FAIL!!!");
+}
+
+function userImage()
+{
+    document.getElementById('inp').onchange = function(e) {
+        var img = new Image();
+        img.onload = draw;
+        img.onerror = failed;
+        img.src = URL.createObjectURL(this.files[0]);
+      };
+}
+
+let XYs = 
+        [
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 3, 7],
+            [0, 0, 0, 7, 9],
+        ];
+
+const hexToRgb = hex =>
+  hex.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i
+             ,(m, r, g, b) => '#' + r + r + g + g + b + b)
+    .substring(1).match(/.{2}/g)
+    .map(x => parseInt(x, 16));
+
+const rgbToHex = (r, g, b) => '#' + [r, g, b].map(arg => {
+    const hex = arg.toString(16);
+    return hex.length === 1 ? '0' + hex : hex
+    }).join('');
+
+function doRgbToHex(a,b,c)
+{
+    return rgbToHex(a,b,c);
+}
+
+class color {
+    constructor(r, g, b) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+    }
+}
+
+function brightnessOfColor(colorIn)
+{
+    return Math.Sqrt(
+        colorIn[0] * colorIn[0] * .241 + 
+        colorIn[1] * colorIn[1] * .691 + 
+        colorIn[2] * colorIn[2] * .068);
+ }
+
+function makeRule(fillstyle,xyfunc,c,d){
+    var retval = new Array();
+    retval["fillStyle"] = fillstyle; // e.g. - "#FF0000"
+    //retval["to be continued... good ideas here..."] = "hmm";
+    retval["xy"] = xyfunc;
+    return retval;
+}
+
+function drawEyes(XYbrightnesses){
     var c = document.getElementById("canvas");
+    c.height = 512;
+    c.width = 512;
+    var r = makeRule
+    (
+        "#FF0000", 
+        function(x,y){
+            return true;
+        }
+    )
+
+    drawLayer(c, r, XYbrightnesses);
+}
+
+function drawLayer(c, rules, XYbrightnesses){
     var ctx = c.getContext("2d");
-    //ctx.fillRect(0, 0, c.width, c.height);
     ctx.clearRect(0, 0, c.width, c.height);
     ctx.font = "normal 300px Segoe UI";
-    ctx.fillStyle = "#FF0000";
+    ctx.fillStyle = rules["fillStyle"]; // e.g. - "#FF0000";
 
     elem=document.createElement('p')
     elem.innerText = ".";
 
-    let xy = lineToXY(Xs);
-    for (let y=0; y<3; y++)
+    let xy = XYbrightnesses;
+    for (let y = 0; y < xy.length; y++)
     {
-        for (let x=0; x<5; x++)
+        for (let x = 0; x < xy[0].length; x++)
         {
+            if (!rules["xy"](x,y)) continue;
             let thisval = xy[y][x];
             let thischar = thisval.toString(16);
             ctx.fillStyle = "#" + thischar + "00000";
@@ -247,4 +323,79 @@ function listFromString(rawString)
     { console.log(typeof(b));console.log(b); }
     console.log(document.toString());
     return list[Math.floor(Math.random()*list.length)];
+}
+
+
+function oldDrawTest()
+{
+    var c = document.getElementById("canvas");
+    var ctx = c.getContext("2d");
+
+
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.font = "normal 300px Segoe UI";
+    let rj = randoji();
+
+    elem=document.createElement('p')
+    elem.innerHTML = randoji();
+    ctx.fillText(elem.innerHTML, -16, 280);
+
+    var bits = ctx.getImageData(0,0,32,32);
+    for (var y = 0; y < 32; y++)
+    {
+        for (var x = 0; x < 32; x++)
+        {
+
+        }
+    }
+    var R = bits.data[0];
+    var G = bits.data[1];
+    var B = bits.data[2];
+
+    var j = 0;
+
+    // let cback = document.getElementById("back_buffer");
+    // let cbackctx = cback.getContext("2d");
+    // cbackctx.font = "normal 384px Segoe UI";
+    // cbackctx.fillText(elem.innerHTML, -90, 384);
+
+    // var img = convertCanvasToImage(cback);
+    // var jm = document.getElementById("joshymage");
+    // jm.image = img;
+}
+
+
+function testCaman()
+{
+    Caman("#canvas", function () {
+
+        this.resetOriginalPixelData();
+        /*
+        this.newLayer(function () {
+            // Change the blending mode
+            this.setBlendingMode("multiply");
+        
+            // Change the opacity of this layer
+            this.opacity(30);
+        
+            // Now we can *either* fill this layer with a
+            // solid color...
+            //this.fillColor('#159915');
+
+            // ... or we can copy the contents of the parent
+            // layer to this one.
+            this.copyParent();
+        
+            // Now, we can call any filter function though the
+            // filter object.
+            this.filter.brightness(10);
+            this.filter.contrast(20);
+            });
+        */
+         this.render();
+
+        // // Arguments: (R, G, B, strength)
+        //this.colorize(25, 180, 25, 190).render();
+
+    });
 }
