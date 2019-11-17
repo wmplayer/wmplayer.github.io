@@ -93,7 +93,7 @@ function drawMojiToFill(c, moji){
 
 function drawLetter(ctx, fillStyle, x, y, letterSize, zoom, letter)
 {
-    ctx.font = "normal " + Math.round(letterSize * zoom) + "px Segoe UI";
+    ctx.font = "normal " + Math.round(letterSize * zoom) + "px Segoe UI Bold";
     ctx.fillStyle = fillStyle; // e.g. - "#FF0000";
     elem=document.createElement('p')
     elem.innerText = letter;
@@ -101,12 +101,22 @@ function drawLetter(ctx, fillStyle, x, y, letterSize, zoom, letter)
 }
 var g_lastHex = "";
 var spewvals = new Array();
+var g_roundrobin = -1;
 function drawPixels(imageDataSource, srcWidth, srcHeight, canvasDestination, drawSize, drawType)
 {
     let ctx = canvasDestination.getContext("2d");
-    var char = ".";
+    var getChar = function()
+    {
+        return ".";
+        var seed = "PaperBeatsRockBeatsScissorsBeats";        
+        g_roundrobin++;
+        if (g_roundrobin >= seed.length) g_roundrobin = 0;
+        return seed.substring(g_roundrobin, g_roundrobin + 1);
+    };
+    var zoom = 4.0;
     for (let y = 0; y < srcHeight; y++)
     {
+        g_roundrobin = Math.floor(Math.random() * 20);
         for (let x = 0; x < srcWidth; x++)
         {
             let i = 4 * (srcWidth * y + x);
@@ -128,7 +138,7 @@ function drawPixels(imageDataSource, srcWidth, srcHeight, canvasDestination, dra
                         spewvals = new Array();
                     }
                 }
-                drawLetter(ctx, fillStyle, x*drawSize, y*drawSize, drawSize, 8.0, char);
+                drawLetter(ctx, fillStyle, x*drawSize, y*drawSize, drawSize, zoom, getChar());
             }
         }
     }
@@ -138,23 +148,30 @@ function drawTest()
 {
     let moj = randoji();
     let lilCanvas = document.getElementById("canvasA");
+    let ar = this.width / this.height;
+    let lilWidth = lilCanvas.height * ar;
+    lilCanvas.width = lilWidth;
+
     let lilPixels = drawMojiToFill(lilCanvas, moj);
     let destiCan = document.getElementById("canvas");
-    destiCan.width = 1024;
-    destiCan.height = 1024;
+    destiCan.width = this.width;
+    destiCan.height = this.height;
     destiCan.getContext("2d").clearRect(0, 0, destiCan.width, destiCan.height);
-    drawPixels(lilPixels.data, lilCanvas.width, lilCanvas.height, destiCan, 32, "dots");
+    drawPixels(lilPixels.data, lilWidth, lilCanvas.height, destiCan, 32, "dots");
 }
 
 function draw() {
     var lilCanvas = document.getElementById('canvasA');
+    var ar = this.width / this.height;
+    let lilWidth = lilCanvas.height * ar;
+    lilCanvas.width = lilWidth;
     var ctx = lilCanvas.getContext('2d');
-    ctx.drawImage(this, 0, 0, this.width, this.height, 0, 0, lilCanvas.width, lilCanvas.height);
-    let lilPixels = ctx.getImageData(0, 0, lilCanvas.width, lilCanvas.height);
+    ctx.drawImage(this, 0, 0, this.width, this.height, 0, 0, lilWidth, lilCanvas.height);
+    let lilPixels = ctx.getImageData(0, 0, lilWidth, lilCanvas.height);
     let bigCanvas = document.getElementById("canvas");
-    bigCanvas.height = 1024;
-    bigCanvas.width = 1024;
-    drawPixels(lilPixels.data, lilCanvas.width, lilCanvas.height, bigCanvas, 16, "dots"); 
+    bigCanvas.height = this.height;
+    bigCanvas.width = this.width;
+    drawPixels(lilPixels.data, lilCanvas.width, lilCanvas.height, bigCanvas, 32, "dots"); 
 }
 
 function failed(){
