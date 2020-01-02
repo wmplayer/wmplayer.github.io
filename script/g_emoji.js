@@ -404,7 +404,6 @@ var g_emoji =
     ["0030..0039   ", 10, "0️..9️", "digit zero..digit nine"],
     ["200D         ", 1, "‍", "zero width joiner"],
     ["20E3         ", 1, "⃣", "combining enclosing keycap"],
-    FE0F          ; Emoji_Component      #  3.2  [1] ()        VARIATION SELECTOR-16
     ["1F1E6..1F1FF ", 26, "🇦..🇿", "regional indicator symbol letter a..regional indicator symbol letter z"],
     ["1F3FB..1F3FF ", 5, "🏻..🏿", "light skin tone..dark skin tone"],
     ["1F9B0..1F9B3 ", 4, "🦰..🦳", "red-haired..white-haired"],

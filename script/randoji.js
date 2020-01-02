@@ -71,13 +71,37 @@ function allmoji(host_div)
     host_div.innerHTML = fullHTML;
 }
 
-function convertCanvasToImage(canvas) {
+function convertCanvasToImage(canvas)
+{
     var image = new Image();
     image.src = canvas.toDataURL("image/png");
     return image;
 }
 
-function drawMojiToFill(c, moji){
+function drawSubMoji(c, moji, x, y, width, height)
+{
+    var ctx = c.getContext("2d");
+    ctx.clearRect(0, 0, c.width, c.height);
+    let fudge = Math.floor(width * 0.2);
+    let fontSize = width - fudge;
+    ctx.font = "normal " + fontSize + "px Segoe UI";
+
+    let elem = document.createElement('p');
+    elem.innerHTML = moji;
+    ctx.fillText(elem.innerHTML, -fudge * 0.5, fontSize);
+    return ctx.getImageData(0, 0, c.width, c.height);
+}
+
+function drawSubMojiAlpha(c, moji, x, y, width, height, alpha)
+{
+    let subcanvas = document.createElement("canvas");
+    subcanvas.height = height;
+    subcanvas.width = width;
+    drawMojiToFill(subcanvas, )
+}
+
+function drawMojiToFill(c, moji)
+{
     var ctx = c.getContext("2d");
     ctx.clearRect(0, 0, c.width, c.height);
     let fudge = Math.floor(c.width * 0.2);
@@ -90,6 +114,30 @@ function drawMojiToFill(c, moji){
     return ctx.getImageData(0, 0, c.width, c.height);
 }
 
+var g_distanceA = 20.0;
+var g_distanceB = 40.0;
+
+function sliderChange(newVal)
+{
+    console.log("===========================================================");
+    newVal = parseFloat(newVal);
+    let normalized = (-50.0 + newVal) / 50.0;
+
+    let namebase = "canvas";
+    for (let i = 0; i < 10; i++)
+    {
+        let namestr = namebase;
+        if (i > 0) namestr += i.toString();
+
+        let c = document.getElementById(namestr);
+        console.log("left:" + c.style.left)
+        let perspective = Math.round(g_distanceA * normalized * (i / 10.0));
+        console.log("perspective: " + perspective);
+        let ptext = perspective + "px";
+        c.style.left = ptext; 
+        console.log(ptext);   
+    }
+}
 
 function drawLetter(ctx, fillStyle, x, y, letterSize, zoom, letter)
 {
@@ -102,7 +150,7 @@ function drawLetter(ctx, fillStyle, x, y, letterSize, zoom, letter)
 var g_lastHex = "";
 var spewvals = new Array();
 var g_roundrobin = -1;
-function drawPixels(imageDataSource, srcWidth, srcHeight, canvasDestination, drawSize, drawType)
+function drawPixels(imageDataSource, srcWidth, srcHeight, canvasDestination, drawSize, drawType, minBright, maxBright)
 {
     let ctx = canvasDestination.getContext("2d");
     var getChar = function()
@@ -121,6 +169,10 @@ function drawPixels(imageDataSource, srcWidth, srcHeight, canvasDestination, dra
         {
             let i = 4 * (srcWidth * y + x);
             if (imageDataSource[i+3] == 0) continue;
+            let colorarray = []
+            let bright = brightnessOfColor([imageDataSource[i], imageDataSource[i+1], imageDataSource[i+2]]) / 255.0;
+            if ((bright < minBright) || (bright > maxBright)) continue;
+            console.log("painting: " + bright);
             var fillStyle = "rgba(" + imageDataSource[i] + ", " + imageDataSource[i+1] + ", " + imageDataSource[i+2] + ", " + imageDataSource[i+3] / 255.0 +  ")";
 
             if (drawType == "squares"){
@@ -148,16 +200,22 @@ function drawTest()
 {
     let moj = randoji();
     let lilCanvas = document.getElementById("canvasA");
-    let ar = this.width / this.height;
-    let lilWidth = lilCanvas.height * ar;
-    lilCanvas.width = lilWidth;
-
     let lilPixels = drawMojiToFill(lilCanvas, moj);
-    let destiCan = document.getElementById("canvas");
-    destiCan.width = this.width;
-    destiCan.height = this.height;
-    destiCan.getContext("2d").clearRect(0, 0, destiCan.width, destiCan.height);
-    drawPixels(lilPixels.data, lilWidth, lilCanvas.height, destiCan, 32, "dots");
+    
+    // let lilWidth = lilCanvas.width;
+    // let destiCan = document.getElementById("canvas");
+    // destiCan.width = this.width;
+    // destiCan.height = this.height;
+    // destiCan.getContext("2d").clearRect(0, 0, destiCan.width, destiCan.height);
+    // drawPixels(lilPixels.data, lilCanvas.width, lilCanvas.height, destiCan, 32, "dots", 0.0, 1.0);
+}
+
+function dotsToCanvas(lilPixels, lilCanvas, canvasName, width, height, minBright, maxBright)
+{
+    let bigCanvas = document.getElementById(canvasName);
+    bigCanvas.height = height;
+    bigCanvas.width = width;
+    drawPixels(lilPixels.data, lilCanvas.width, lilCanvas.height, bigCanvas, 32, "dots", minBright, maxBright); 
 }
 
 function draw() {
@@ -168,10 +226,13 @@ function draw() {
     var ctx = lilCanvas.getContext('2d');
     ctx.drawImage(this, 0, 0, this.width, this.height, 0, 0, lilWidth, lilCanvas.height);
     let lilPixels = ctx.getImageData(0, 0, lilWidth, lilCanvas.height);
-    let bigCanvas = document.getElementById("canvas");
-    bigCanvas.height = this.height;
-    bigCanvas.width = this.width;
-    drawPixels(lilPixels.data, lilCanvas.width, lilCanvas.height, bigCanvas, 32, "dots"); 
+    let namebase = "canvas";
+    for (let i = 0; i < 10; i++)
+    {
+        let namestr = namebase;
+        if (i > 0) namestr += i.toString();
+        dotsToCanvas(lilPixels, lilCanvas, namestr, this.width, this.height, i / 10.0,  (i + 1.0) / 10.0);
+    }
 }
 
 function failed(){
@@ -221,7 +282,7 @@ class color {
 
 function brightnessOfColor(colorIn)
 {
-    return Math.Sqrt(
+    return Math.sqrt(
         colorIn[0] * colorIn[0] * .241 + 
         colorIn[1] * colorIn[1] * .691 + 
         colorIn[2] * colorIn[2] * .068);

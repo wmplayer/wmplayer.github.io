@@ -14,7 +14,7 @@
 		<br/>
 	<hr/>
 	<div id="gridMoji" class="grid-container">
-		<div id="entry00">&#x1F981;</div>
+		<div id="entry00">&#x1F981;</div> 
 		<div id="entry01">&#x1F981;</div>
 		<div id="entry02">&#x1F981;</div>
 		<div id="entry03">&#x1F981;</div>
@@ -32,6 +32,7 @@
 		<div id="entry16">&#x1F981;</div>
 		<div id="entry17">&#x1F981;</div>
 		<span class="jspan" title="foo bar">&#x267B;</span>	
+	
 	</div>
 <div id="list_output"><i>list output goes here</i></div>
 <br/>
@@ -41,7 +42,7 @@
 <input type="button" onclick="userImage()" class="ghost-button" value="userImage()"/>
 <input type="file" id="inp"/>
 
-<script src="http://cdnjs.cloudflare.com/ajax/libs/camanjs/4.0.0/caman.full.min.js"></script>
+<!--<script src="http://cdnjs.cloudflare.com/ajax/libs/camanjs/4.0.0/caman.full.min.js"></script>-->
 <input type="button" onclick="testCaman()" class="ghost-button" value="testCaman()"/>
 <hr/>
 <input type="button" onclick="allmoji(allmoji_host);" class="ghost-button" value="allmoji(allmoji_host)"/>
@@ -52,7 +53,24 @@
 <canvas height="32" width="32" id="canvasB"></canvas>
 <canvas height="32" width="32" id="canvasC"></canvas>
 <br/>
-<canvas height="512" width="512" id="canvas"></canvas>
+<div>
+	<input type="range"  id="panslider" oninput="sliderChange(this.value)" min="0" max="100" style="width:100%;"/>
+	<input type="range"  id="planeA" oninput="g_distanceA = this.value / 1.0;" min="0" max="100" value="20" style="width:100%;"/>
+	<input type="range"  id="planeB" oninput="g_distanceB = this.value / 1.0;" min="0" max="100" value="40" style="width:100%;"/>
+</div>
+<div style="position:relative">
+	<canvas height="512" width="512" id="canvas"  style="position:absolute"></canvas>
+	<canvas height="512" width="512" id="canvas1" style="position:absolute;top:2px;left:2px;"></canvas>
+	<canvas height="512" width="512" id="canvas2" style="position:absolute;top:4px;left:4px;"></canvas>
+	<canvas height="512" width="512" id="canvas3"  style="position:absolute"></canvas>
+	<canvas height="512" width="512" id="canvas4"  style="position:absolute"></canvas>
+	<canvas height="512" width="512" id="canvas5"  style="position:absolute"></canvas>
+	<canvas height="512" width="512" id="canvas6"  style="position:absolute"></canvas>
+	<canvas height="512" width="512" id="canvas7"  style="position:absolute"></canvas>
+	<canvas height="512" width="512" id="canvas8"  style="position:absolute"></canvas>
+	<canvas height="512" width="512" id="canvas9"  style="position:absolute"></canvas>
+
+</div>
 <br/>
 <canvas height="384" width="384" id="back_buffer" style="visibility:hidden"/>
 <img id="joshymage"/>
