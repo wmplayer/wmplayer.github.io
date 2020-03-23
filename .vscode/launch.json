@@ -8,15 +8,15 @@
         "type": "chrome",
         "request": "launch",
         "name": "Launch Chrome",
-        "url": "http://localhost:80/wmplayer.github.io/combimoji.htm",
+        "url": "http://localhost:80/jots.htm",
         "webRoot": "${workspaceFolder}"
     },
-        // {
-        //     "type": "edge",
-        //     "request": "launch",
-        //     "name": "Launch Edge against localhost",
-        //     "url": "http://localhost:80/wmplayer.github.io/randoji.htm",
-        //     "webRoot": "${workspaceFolder}"
-        // }
+        {
+            "type": "edge",
+            "request": "launch",
+            "name": "Launch Edge against localhost",
+            "url": "http://localhost:80/jots.htm",
+            "webRoot": "${workspaceFolder}"
+        }
     ]
 }

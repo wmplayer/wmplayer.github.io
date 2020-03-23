@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Jots</title>
+<script>
+    function getCtx()
+    {
+        var cv = document.getElementById("canvas");
+        var ct = cv.getContext("2d");
+        return ct;
+    }
+    function cleanCanvas()
+    {
+        let ct = getCtx();
+        ct.fillStyle = "rgba(250,60,60,0.2)";
+        ct.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    function drawImage(argA, argB)
+    {
+        if (argA) console.log(argA);
+        if (argB) console.log(argB);
+    }
+    function init()
+    {
+        document.getElementById('inp').onchange = function(e) {
+            var img = new Image();
+            img.onload = drawImage;
+            img.src = URL.createObjectURL(this.files[0]);
+        };
+    }
+</script>
+</head>
+<body onload="cleanCanvas();">
+<div style="display:grid;grid-template-columns: 10% auto 10%; grid-template-rows: auto 100; ">
+<div style="grid-column: 1;background-color:rgba(127, 127, 127, 0.548);grid-row-start: 1; grid-row-end: 2;" >
+L
+</div>
+
+<div style="grid-column: 2;grid-row: 1;align-content: center;">
+    <canvas id="canvas" height="1024" width="1024"></canvas>
+</div>
+
+<div style="grid-column: 2;grid-row: 2;">
+    <input type="file" id="inp"/>
+</div>
+
+<div style="grid-column: 3;background-color: rgba(127, 127, 127, 0.548);">
+R    
+</div>
+
+</div>
+</body>
+</html>
