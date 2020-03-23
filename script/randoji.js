@@ -148,13 +148,16 @@ function drawTest()
 
 function draw() {
     var lilCanvas = document.getElementById('canvasA');
+    let ar = (this.height == 0) ? 0 : this.width / this.height;
+    let arWidth = Math.floor(lilCanvas.height * ar);
+    lilCanvas.width = arWidth;
     var ctx = lilCanvas.getContext('2d');
-    ctx.drawImage(this, 0, 0, this.width, this.height, 0, 0, lilCanvas.width, lilCanvas.height);
-    let lilPixels = ctx.getImageData(0, 0, lilCanvas.width, lilCanvas.height);
+    ctx.drawImage(this, 0, 0, this.width, this.height, 0, 0, arWidth, lilCanvas.height);
+    let lilPixels = ctx.getImageData(0, 0, arWidth, lilCanvas.height);
     let bigCanvas = document.getElementById("canvas");
-    bigCanvas.height = 1024;
-    bigCanvas.width = 1024;
-    drawPixels(lilPixels.data, lilCanvas.width, lilCanvas.height, bigCanvas, 16, "dots"); 
+    bigCanvas.height = this.height;
+    bigCanvas.width = this.width;
+    drawPixels(lilPixels.data, arWidth, lilCanvas.height, bigCanvas, 16, "dots"); 
 }
 
 function failed(){
