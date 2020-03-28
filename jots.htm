@@ -10,35 +10,113 @@
         var ct = cv.getContext("2d");
         return ct;
     }
+
     function cleanCanvas()
     {
         let ct = getCtx();
         ct.fillStyle = "rgba(250,60,60,0.2)";
         ct.fillRect(0, 0, canvas.width, canvas.height);
     }
-    function drawImage(argA, argB)
+
+    var g_roundrobin = -1;
+    function drawPixels(imageDataSource, srcWidth, srcHeight, canvasDestination, drawSize, drawType, minBright, maxBright)
     {
-        if (argA) console.log(argA);
-        if (argB) console.log(argB);
+        let ctx = canvasDestination.getContext("2d");
+        var getChar = function()
+        {
+            return ".";
+            var seed = "PaperBeatsRockBeatsScissorsBeats";        
+            g_roundrobin++;
+            if (g_roundrobin >= seed.length) g_roundrobin = 0;
+            return seed.substring(g_roundrobin, g_roundrobin + 1);
+        };
+        var zoom = 4.0;
+        ctx.fillStyle="black";
+        ctx.fillRect(0, 0, canvasDestination.width, canvasDestination.height);
+        if (srcWidth%2 == 1) srcWidth++;
+        for (let y = 0; y < srcHeight; y++)
+        {
+            let xLog = "";
+            g_roundrobin = Math.floor(Math.random() * 20);
+            for (let x = 0; x < srcWidth; x++)
+            {
+                let i = 4 * (srcWidth * y + x);
+                if (imageDataSource[i+3] == 0) {console.log("skipping x:" + x + ",y:" + y); continue;}
+                let colorarray = []
+                var fillStyle = "rgba(" + imageDataSource[i] + ", " + imageDataSource[i+1] + ", " + imageDataSource[i+2] + ", " + imageDataSource[i+3] / 255.0 +  ")";
+                if (-1 == fillStyle.indexOf("rgba"))
+                {
+                    console.log("what the hell?" + fillStyle);
+                    freak();
+                }
+
+                if (drawType == "squares"){
+                    ctx.fillStyle = fillStyle;
+                    ctx.fillRect(x*drawSize, y*drawSize, drawSize, drawSize);
+                }
+                else if (drawType == "arcs"){
+                    ctx.lineWidth = drawSize / 3.0;
+                    ctx.strokeStyle = fillStyle;
+                    ctx.beginPath();
+                    ctx.arc((x + 0.5) *drawSize, (y + 0.5) * drawSize, 0.5 * drawSize - ctx.lineWidth, 0, 2*Math.PI);
+                    ctx.stroke();
+                }
+                else{
+                    drawLetter(ctx, fillStyle, x*drawSize, y*drawSize, drawSize, zoom, getChar());
+                }
+            }
+            console.log(xLog);
+        }
     }
+
+    function drawLetter(ctx, fillStyle, x, y, letterSize, zoom, letter)
+    {
+        ctx.font = "normal " + Math.round(letterSize * zoom) + "px Segoe UI Bold";
+        ctx.fillStyle = fillStyle; // e.g. - "#FF0000";
+        elem=document.createElement('p')
+        elem.innerText = letter;
+        ctx.fillText(elem.innerHTML, x, y);
+    }
+
+    function dotsToCanvas(lilPixels, lilCanvas, canvasName, width, height)
+    {
+        let bigCanvas = document.getElementById(canvasName);
+        bigCanvas.height = height;
+        bigCanvas.width = width;
+        drawPixels(lilPixels.data, lilCanvas.width, lilCanvas.height, bigCanvas, 32, "arcs"); 
+        //drawPixels(lilPixels.data, lilCanvas.width, lilCanvas.height, bigCanvas, 32, "dots"); 
+    }
+
+    function draw(imgLoadEvent) 
+    {
+        let imgElement = imgLoadEvent.srcElement;
+        var lilCanvas = document.createElement("canvas");
+        lilCanvas.height = 64;
+        var ar = this.width / this.height;
+        let lilWidth = lilCanvas.height * ar;
+        lilCanvas.width = lilWidth;
+        var ctx = lilCanvas.getContext('2d');
+        ctx.drawImage(this, 0, 0, this.width, this.height, 0, 0, lilWidth, lilCanvas.height);
+        let lilPixels = ctx.getImageData(0, 0, lilWidth, lilCanvas.height);
+        dotsToCanvas(lilPixels, lilCanvas, "canvas", this.width, this.height);
+    }
+
     function init()
     {
-        document.getElementById('inp').onchange = function(e) {
-            var img = new Image();
-            img.onload = drawImage;
-            img.src = URL.createObjectURL(this.files[0]);
-        };
+        var img = new Image();
+        img.onload = draw;
+        img.src = "media/the bounce.png";
     }
 </script>
 </head>
-<body onload="cleanCanvas();">
+<body onload="cleanCanvas();init();" style="background-color: black;">
 <div style="display:grid;grid-template-columns: 10% auto 10%; grid-template-rows: auto 100; ">
-<div style="grid-column: 1;background-color:rgba(127, 127, 127, 0.548);grid-row-start: 1; grid-row-end: 2;" >
+<div style="grid-column: 1;background-color:rgba(127, 127, 127, 0.0.05);grid-row-start: 1; grid-row-end: 2;" >
 L
 </div>
 
 <div style="grid-column: 2;grid-row: 1;align-content: center;">
-    <canvas id="canvas" height="1024" width="1024"></canvas>
+    <canvas id="canvas" height="2048" width="2048"></canvas>
 </div>
 
 <div style="grid-column: 2;grid-row: 2;">
