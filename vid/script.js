@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function onSuccessCallback(stream) {
             // Use the stream from the camera as the source of the video element
-            video.src = window.URL.createObjectURL(stream) || stream;
+            video.src = /*window.URL.createObjectURL(stream) ||*/ stream;
 
             // Autoplay
             video.play();
@@ -63,15 +63,16 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Draw the video stream at the canvas object
-    function drawVideoAtCanvas(obj, context) {
+    function drawObjectToCanvas(sourceObject, context) {
         window.setInterval(function() {
-            context.drawImage(obj, 0, 0);
+            let px = sourceToImageData(sourceObject, 64, 64);
+            let rects = new sourceDest();
+            rects.setSource(0, 0, 64, 64);
+            rects.setDest(0, 0, 1000,1000);
+            drawPixels(px.data, rects, context, 32, "arcs");
         }, 60);
     }
 
-    // The canPlayType() function doesn't return true or false. In recognition of how complex
-    // formats are, the function returns a string: 'probably', 'maybe' or an empty string.
     function getAudioType(element) {
         if (element.canPlayType) {
             if (element.canPlayType('audio/mp4; codecs="mp4a.40.5"') !== '') {
@@ -83,12 +84,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return false;
     }
 
-    // Add event listener for our video's Play function in order to produce video at the canvas
     video.addEventListener('play', function() {
-        drawVideoAtCanvas(this, context);
+        drawObjectToCanvas(this, context);
     }, false);
 
-    // Add event listener for our Button (to switch video filters)
     document.querySelector('button').addEventListener('click', function() {
         video.className = '';
         canvas.className = '';
@@ -118,10 +117,27 @@ function cleanCanvas()
     ct.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-var g_roundrobin = -1;
-function drawPixels(imageDataSource, srcWidth, srcHeight, canvasDestination, drawSize, drawType, minBright, maxBright)
+function sourceDest()
 {
-    let ctx = canvasDestination.getContext("2d");
+    this.setSource = function(x,y,w,h){
+        this.srcX = x;
+        this.srcY = y;
+        this.srcW = w;
+        this.srcH = h;
+    };
+    this.setDest = function(x,y,w,h){
+        this.destX = x;
+        this.destY = y;
+        this.destW = w;
+        this.destH = h;
+    };
+}
+
+var g_roundrobin = -1;
+function drawPixels(imageDataSource, srcDest, ctx, drawSize, drawType, minBright, maxBright)
+{
+    let srcWidth = srcDest.srcW; let srcHeight = srcDest.srcH;
+    let destWidth = srcDest.destW; let destHeight = srcDest.destH;
     var getChar = function()
     {
         return ".";
@@ -132,7 +148,7 @@ function drawPixels(imageDataSource, srcWidth, srcHeight, canvasDestination, dra
     };
     var zoom = 4.0;
     ctx.fillStyle="black";
-    ctx.fillRect(0, 0, canvasDestination.width, canvasDestination.height);
+    ctx.fillRect(0, 0, destWidth, destHeight);
     if (srcWidth%2 == 1) srcWidth++;
     for (let y = 0; y < srcHeight; y++)
     {
@@ -169,6 +185,19 @@ function drawPixels(imageDataSource, srcWidth, srcHeight, canvasDestination, dra
     }
 }
 
+var g_backBufferCanvas = document.createElement("canvas");
+function sourceToImageData(sourceObject, width, height)
+{
+    let lilCanvas = g_backBufferCanvas;
+    lilCanvas.height = height;
+    let ar = sourceObject.width / sourceObject.height;
+    let lilWidth = height * ar;
+    lilCanvas.width = lilWidth;
+    var ctx = lilCanvas.getContext('2d');
+    ctx.drawImage(sourceObject, 0, 0, sourceObject.width, sourceObject.height, 0, 0, width, height);
+    return ctx.getImageData(0, 0, lilWidth, lilCanvas.height);
+}
+
 function drawLetter(ctx, fillStyle, x, y, letterSize, zoom, letter)
 {
     ctx.font = "normal " + Math.round(letterSize * zoom) + "px Segoe UI Bold";
@@ -176,29 +205,6 @@ function drawLetter(ctx, fillStyle, x, y, letterSize, zoom, letter)
     elem=document.createElement('p')
     elem.innerText = letter;
     ctx.fillText(elem.innerHTML, x, y);
-}
-
-function dotsToCanvas(lilPixels, lilCanvas, canvasName, width, height)
-{
-    let bigCanvas = document.getElementById(canvasName);
-    bigCanvas.height = height;
-    bigCanvas.width = width;
-    drawPixels(lilPixels.data, lilCanvas.width, lilCanvas.height, bigCanvas, 32, "arcs"); 
-    //drawPixels(lilPixels.data, lilCanvas.width, lilCanvas.height, bigCanvas, 32, "dots"); 
-}
-
-function draw(imgLoadEvent) 
-{
-    let imgElement = imgLoadEvent.srcElement;
-    var lilCanvas = document.createElement("canvas");
-    lilCanvas.height = 64;
-    var ar = this.width / this.height;
-    let lilWidth = lilCanvas.height * ar;
-    lilCanvas.width = lilWidth;
-    var ctx = lilCanvas.getContext('2d');
-    ctx.drawImage(this, 0, 0, this.width, this.height, 0, 0, lilWidth, lilCanvas.height);
-    let lilPixels = ctx.getImageData(0, 0, lilWidth, lilCanvas.height);
-    dotsToCanvas(lilPixels, lilCanvas, "canvas", this.width, this.height);
 }
 
 function init()
