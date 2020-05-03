@@ -37,7 +37,9 @@
 <div id="list_output"><i>list output goes here</i></div>
 <br/>
 
+
 <input type="button" onclick="drawTest()" class="ghost-button" value="drawTest()"/>
+<input type="button" onclick="drawIso()" class="ghost-button" value="drawIso()"/>
 <input type="button" onclick="drawEyes(XYs)" class="ghost-button" value="drawEyes(XYs)"/>
 <input type="button" onclick="userImage()" class="ghost-button" value="userImage()"/>
 <input type="file" id="inp"/>
@@ -72,6 +74,7 @@
 
 </div>
 <br/>
+<canvas id="pasty_canvas" height="256" width="256"/>
 <canvas height="384" width="384" id="back_buffer" style="visibility:hidden"/>
 <img id="joshymage"/>
 <canvas id="original" width="100" height="100" style="position:absolute;top:800px;left:50px;"></canvas>

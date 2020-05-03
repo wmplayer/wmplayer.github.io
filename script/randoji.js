@@ -210,6 +210,137 @@ function drawTest()
     // drawPixels(lilPixels.data, lilCanvas.width, lilCanvas.height, destiCan, 32, "dots", 0.0, 1.0);
 }
 
+
+var ramp = [1, 3, 4, 5];
+var alpha = [10, 15, 16, 17, 18,   255,  18, 17, 16, 15, 10];
+for (let j = 0; j < ramp.length; j++)
+{
+    let thisVal = ramp[j] * (255.0 / 9.0);
+    alpha[j] = thisVal;
+    alpha[alpha.length - 1- j] = thisVal;
+}
+
+function stamp(sourceCanvas, destCanvas, x, y, tweak)
+{
+    // awesome crazy idea: all static functions with "local" context sourced from an ID. So, there's a 
+    // copy of every variable for every ID. There's tons of ways to plumb the ID separately from the
+    // C++/JS notion of the "context" of each call. This avoids a ton of  nasty plumbing  
+    let sourceCtx = sourceCanvas.getContext("2d");
+
+    let w = sourceCanvas.width;
+    let h = sourceCanvas.width;
+    let darkifier = 1.0 - 0.025 * (tweak); //0.95;//1.0;//(11 - tweak) / 10.0;
+
+    let srcPixels = sourceCtx.getImageData(0, 0, w, h);
+    for (let y = 0; y < h; y++)
+    {
+        for (let x = 0; x < w; x++)
+        {
+            let pxR = srcPixels.data[4 * (w*y + x)];
+            srcPixels.data[4 * (w*y + x)] = pxR * darkifier;
+
+            let pxG = srcPixels.data[4 * (w*y + x) + 1];
+            srcPixels.data[4 * (w*y + x) + 1] = pxG * darkifier;
+
+            let pxB = srcPixels.data[4 * (w*y + x) + 2];
+            srcPixels.data[4 * (w*y + x) + 2] = pxB * darkifier;
+
+            let thold = 1;
+            if ((pxR < thold) && (pxG < thold) && (pxB < thold))
+            {
+                srcPixels.data[4 * (w*y + x) + 3] = 0;
+            }
+            else
+            {
+                //srcPixels.data[4 * (w*y + x) + 3] = alpha[tweak];
+            }
+        }
+    }
+
+    sourceCtx.putImageData(srcPixels, 0, 0);
+    
+    let ctx = destCanvas.getContext("2d");
+    ctx.drawImage(sourceCanvas, x, y);
+}
+
+//var CLIPBOARD = new CLIPBOARD_CLASS("pasty_canvas", true);
+
+/**
+ * image pasting into canvas
+ * 
+ * @param {string} canvas_id - canvas id
+ * @param {boolean} autoresize - if canvas will be resized
+ */
+function CLIPBOARD_CLASS(canvas_id, autoresize) {
+	var _self = this;
+	var canvas = document.getElementById(canvas_id);
+	 var ctx = document.getElementById(canvas_id).getContext("2d");
+
+	//handlers
+	document.addEventListener('paste', function (e) { _self.paste_auto(e); }, false);
+
+	//on paste
+	this.paste_auto = function (e) {
+		if (e.clipboardData) {
+			var items = e.clipboardData.items;
+			if (!items) return;
+			
+			//access data directly
+			var is_image = false;
+			for (var i = 0; i < items.length; i++) {
+				if (items[i].type.indexOf("image") !== -1) {
+					//image
+					var blob = items[i].getAsFile();
+					var URLObj = window.URL || window.webkitURL;
+					var source = URLObj.createObjectURL(blob);
+					this.paste_createImage(source);
+					is_image = true;
+				}
+			}
+			if(is_image == true){
+				e.preventDefault();
+			}
+		}
+	};
+	//draw pasted image to canvas
+	this.paste_createImage = function (source) {
+		var pastedImage = new Image();
+		pastedImage.onload = function () {
+			if(autoresize == true){
+				//resize
+				canvas.width = pastedImage.width;
+				canvas.height = pastedImage.height;
+			}
+			else{
+				//clear canvas
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+			}
+			ctx.drawImage(pastedImage, 0, 0);
+		};
+		pastedImage.src = source;
+	};
+}
+
+
+function drawIso()
+{
+    let moj = randoji();
+    let stampCanvas = document.createElement("canvas");
+    stampCanvas.height = 128;
+    stampCanvas.width = stampCanvas.height;
+    let stampPixels = drawMojiToFill(stampCanvas, moj);
+    let bigCanvas = document.getElementById("canvas");
+
+    let baseX = 100;
+    let baseY = 100;
+    for (let deepz = 10; deepz >= 0; deepz--)
+    {
+        stamp(stampCanvas, bigCanvas, baseX + deepz, baseY - deepz, deepz);
+    }
+
+    //let lilPixels = drawMojiToFill(lilCanvas, moj);
+}
+
 function dotsToCanvas(lilPixels, lilCanvas, canvasName, width, height, minBright, maxBright)
 {
     let bigCanvas = document.getElementById(canvasName);
