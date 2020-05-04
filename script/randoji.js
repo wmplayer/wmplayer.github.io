@@ -220,6 +220,15 @@ for (let j = 0; j < ramp.length; j++)
     alpha[alpha.length - 1- j] = thisVal;
 }
 
+var g_orgSrcPixels = null;
+function initStamp(sourceCanvas)
+{
+    let w = sourceCanvas.width;
+    let h = sourceCanvas.width;
+    let sourceCtx = sourceCanvas.getContext("2d");
+    g_orgSrcPixels = sourceCtx.getImageData(0, 0, w, h);
+}
+
 function stamp(sourceCanvas, destCanvas, x, y, tweak)
 {
     // awesome crazy idea: all static functions with "local" context sourced from an ID. So, there's a 
@@ -257,14 +266,35 @@ function stamp(sourceCanvas, destCanvas, x, y, tweak)
         }
     }
 
-    sourceCtx.putImageData(srcPixels, 0, 0);
-    
+    sourceCtx.putImageData(srcPixels, 0, 0);    
     let ctx = destCanvas.getContext("2d");
     ctx.drawImage(sourceCanvas, x, y);
+    if (g_orgSrcPixels)
+    {
+        sourceCtx.putImageData(g_orgSrcPixels, 0, 0);
+    }
 }
 
-//var CLIPBOARD = new CLIPBOARD_CLASS("pasty_canvas", true);
-
+// ===========================================================
+// ===========================================================
+// ===========================================================
+navigator.permissions.query({
+    name: 'clipboard-read'
+  }).then(permissionStatus => {
+    // Will be 'granted', 'denied' or 'prompt':
+    console.log(permissionStatus.state);
+  
+    // Listen for changes to the permission state
+    permissionStatus.onchange = () => {
+      console.log(permissionStatus.state);
+    };
+  });
+  
+var g_CLIPBOARD;
+function INIT_CLIPBOAD()
+{
+    g_CLIPBOARD = new CLIPBOARD_CLASS("pasty_canvas", true);
+}
 /**
  * image pasting into canvas
  * 
@@ -329,6 +359,8 @@ function drawIso()
     stampCanvas.height = 128;
     stampCanvas.width = stampCanvas.height;
     let stampPixels = drawMojiToFill(stampCanvas, moj);
+    initStamp(stampCanvas);
+
     let bigCanvas = document.getElementById("canvas");
 
     let baseX = 100;
