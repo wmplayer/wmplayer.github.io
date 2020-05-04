@@ -220,6 +220,15 @@ for (let j = 0; j < ramp.length; j++)
     alpha[alpha.length - 1- j] = thisVal;
 }
 
+var g_orgSrcPixels = null;
+function initStamp(sourceCanvas)
+{
+    let w = sourceCanvas.width;
+    let h = sourceCanvas.width;
+    let sourceCtx = sourceCanvas.getContext("2d");
+    g_orgSrcPixels = sourceCtx.getImageData(0, 0, w, h);
+}
+
 function stamp(sourceCanvas, destCanvas, x, y, tweak)
 {
     // awesome crazy idea: all static functions with "local" context sourced from an ID. So, there's a 
@@ -258,10 +267,13 @@ function stamp(sourceCanvas, destCanvas, x, y, tweak)
         }
     }
 
-    sourceCtx.putImageData(srcPixels, 0, 0);
-    
+    sourceCtx.putImageData(srcPixels, 0, 0);    
     let ctx = destCanvas.getContext("2d");
     ctx.drawImage(sourceCanvas, x, y);
+    if (g_orgSrcPixels)
+    {
+        sourceCtx.putImageData(g_orgSrcPixels, 0, 0);
+    }
 }
 
 var g_frame = 0;
@@ -272,6 +284,8 @@ function drawIso()
     stampCanvas.height = 128;
     stampCanvas.width = stampCanvas.height;
     let stampPixels = drawMojiToFill(stampCanvas, moj);
+    initStamp(stampCanvas);
+
     let bigCanvas = document.getElementById("canvas");
 
     let baseX = 100;
