@@ -1,8 +1,28 @@
-body {
-  background-color: #303030;
-  color: white;
+.HolyGrail,
+.HolyGrail-body {
   display: flex;
-  width: 100vw;
-  height: 100vh;
-  box-sizing: border-box;
+  flex-direction: column;
+}
+
+.HolyGrail-nav {
+  order: -1;
+}
+
+@media (min-width: 768px) {
+  .HolyGrail-body {
+    flex-direction: row;
+    flex: 1;
+  }
+  .HolyGrail-content {
+    flex: 1;
+  }
+  .HolyGrail-nav, .HolyGrail-ads {
+    /* 12em is the width of the columns */
+    flex: 0 0 12em;
+  }
+}
+
+#spew {
+  width:80vp;
+  height:100vp;
 }
