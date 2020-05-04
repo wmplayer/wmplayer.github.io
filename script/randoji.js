@@ -230,6 +230,7 @@ function stamp(sourceCanvas, destCanvas, x, y, tweak)
     let w = sourceCanvas.width;
     let h = sourceCanvas.width;
     let darkifier = 1.0 - 0.025 * (tweak); //0.95;//1.0;//(11 - tweak) / 10.0;
+    console.log("tweak: " + tweak + "x: " + x + "y: " + y + "d:" + darkifier);
 
     let srcPixels = sourceCtx.getImageData(0, 0, w, h);
     for (let y = 0; y < h; y++)
@@ -263,65 +264,7 @@ function stamp(sourceCanvas, destCanvas, x, y, tweak)
     ctx.drawImage(sourceCanvas, x, y);
 }
 
-//var CLIPBOARD = new CLIPBOARD_CLASS("pasty_canvas", true);
-
-/**
- * image pasting into canvas
- * 
- * @param {string} canvas_id - canvas id
- * @param {boolean} autoresize - if canvas will be resized
- */
-function CLIPBOARD_CLASS(canvas_id, autoresize) {
-	var _self = this;
-	var canvas = document.getElementById(canvas_id);
-	 var ctx = document.getElementById(canvas_id).getContext("2d");
-
-	//handlers
-	document.addEventListener('paste', function (e) { _self.paste_auto(e); }, false);
-
-	//on paste
-	this.paste_auto = function (e) {
-		if (e.clipboardData) {
-			var items = e.clipboardData.items;
-			if (!items) return;
-			
-			//access data directly
-			var is_image = false;
-			for (var i = 0; i < items.length; i++) {
-				if (items[i].type.indexOf("image") !== -1) {
-					//image
-					var blob = items[i].getAsFile();
-					var URLObj = window.URL || window.webkitURL;
-					var source = URLObj.createObjectURL(blob);
-					this.paste_createImage(source);
-					is_image = true;
-				}
-			}
-			if(is_image == true){
-				e.preventDefault();
-			}
-		}
-	};
-	//draw pasted image to canvas
-	this.paste_createImage = function (source) {
-		var pastedImage = new Image();
-		pastedImage.onload = function () {
-			if(autoresize == true){
-				//resize
-				canvas.width = pastedImage.width;
-				canvas.height = pastedImage.height;
-			}
-			else{
-				//clear canvas
-				ctx.clearRect(0, 0, canvas.width, canvas.height);
-			}
-			ctx.drawImage(pastedImage, 0, 0);
-		};
-		pastedImage.src = source;
-	};
-}
-
-
+var g_frame = 0;
 function drawIso()
 {
     let moj = randoji();
@@ -333,11 +276,18 @@ function drawIso()
 
     let baseX = 100;
     let baseY = 100;
-    for (let deepz = 10; deepz >= 0; deepz--)
+    let bigCtx = bigCanvas.getContext("2d");
+    let depth = 10;
+    if (g_frame == 0)
+    {
+        bigCtx.clearRect(baseX, baseY, stampCanvas.width + depth, stampCanvas.height + depth);
+    }
+    //for (let deepz = depth; deepz >= 0; deepz--)
+    let deepz = g_frame;
     {
         stamp(stampCanvas, bigCanvas, baseX + deepz, baseY - deepz, deepz);
     }
-
+    g_frame = (g_frame + 1) % depth;
     //let lilPixels = drawMojiToFill(lilCanvas, moj);
 }
 
@@ -607,4 +557,64 @@ function testCaman()
         //this.colorize(25, 180, 25, 190).render();
 
     });
+}
+
+
+
+//var CLIPBOARD = new CLIPBOARD_CLASS("pasty_canvas", true);
+
+/**
+ * image pasting into canvas
+ * 
+ * @param {string} canvas_id - canvas id
+ * @param {boolean} autoresize - if canvas will be resized
+ */
+function CLIPBOARD_CLASS(canvas_id, autoresize) {
+	var _self = this;
+	var canvas = document.getElementById(canvas_id);
+	 var ctx = document.getElementById(canvas_id).getContext("2d");
+
+	//handlers
+	document.addEventListener('paste', function (e) { _self.paste_auto(e); }, false);
+
+	//on paste
+	this.paste_auto = function (e) {
+		if (e.clipboardData) {
+			var items = e.clipboardData.items;
+			if (!items) return;
+			
+			//access data directly
+			var is_image = false;
+			for (var i = 0; i < items.length; i++) {
+				if (items[i].type.indexOf("image") !== -1) {
+					//image
+					var blob = items[i].getAsFile();
+					var URLObj = window.URL || window.webkitURL;
+					var source = URLObj.createObjectURL(blob);
+					this.paste_createImage(source);
+					is_image = true;
+				}
+			}
+			if(is_image == true){
+				e.preventDefault();
+			}
+		}
+	};
+	//draw pasted image to canvas
+	this.paste_createImage = function (source) {
+		var pastedImage = new Image();
+		pastedImage.onload = function () {
+			if(autoresize == true){
+				//resize
+				canvas.width = pastedImage.width;
+				canvas.height = pastedImage.height;
+			}
+			else{
+				//clear canvas
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+			}
+			ctx.drawImage(pastedImage, 0, 0);
+		};
+		pastedImage.src = source;
+	};
 }
