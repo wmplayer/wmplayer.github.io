@@ -221,14 +221,33 @@ for (let j = 0; j < ramp.length; j++)
 }
 
 var g_orgSrcPixels = null;
-function initStamp(sourceCanvas)
+var g_stampCanvas = null;
+function initStamp(widthHeight)
 {
-    let w = sourceCanvas.width;
-    let h = sourceCanvas.width;
+    let sourceCanvas = document.createElement("canvas");
+    sourceCanvas.height = widthHeight;
+    sourceCanvas.width = widthHeight;
     let sourceCtx = sourceCanvas.getContext("2d");
-    g_orgSrcPixels = sourceCtx.getImageData(0, 0, w, h);
+
+    let moj = randoji();
+    let stampPixels = drawMojiToFill(sourceCanvas, moj);
+
+    g_orgSrcPixels = sourceCtx.getImageData(0, 0, widthHeight, widthHeight);
+    g_stampCanvas = sourceCanvas;
 }
 
+function lighten(levelOutOf10)
+{
+    return 1.0 + Math.sin((levelOutOf10 / 10.0) * (Math.PI / 2.0));
+}
+
+function darken(levelOutOf10)
+{
+    return 1.0 - Math.sin((levelOutOf10 / 10.0) * (Math.PI / 2.0));
+}
+var g_tweakmap = [1.0,       lighten(2), lighten(3), lighten(4), 
+                lighten(3), lighten(1), darken(3), darken(5),
+                  darken(7), darken(9)];
 function stamp(sourceCanvas, destCanvas, x, y, tweak)
 {
     // awesome crazy idea: all static functions with "local" context sourced from an ID. So, there's a 
@@ -238,7 +257,7 @@ function stamp(sourceCanvas, destCanvas, x, y, tweak)
 
     let w = sourceCanvas.width;
     let h = sourceCanvas.width;
-    let darkifier = 1.0 - 0.025 * (tweak); //0.95;//1.0;//(11 - tweak) / 10.0;
+    let darkifier = g_tweakmap[tweak];//1.0 - Math.sin((g_depth - tweak) * Math.PI / (2.0 * g_depth)); //0.95;//1.0;//(11 - tweak) / 10.0;
     console.log("tweak: " + tweak + "x: " + x + "y: " + y + "d:" + darkifier);
 
     let srcPixels = sourceCtx.getImageData(0, 0, w, h);
@@ -276,32 +295,31 @@ function stamp(sourceCanvas, destCanvas, x, y, tweak)
     }
 }
 
-var g_frame = 0;
+var g_depth = 10;
+var g_frame = g_depth;
 function drawIso()
 {
-    let moj = randoji();
-    let stampCanvas = document.createElement("canvas");
-    stampCanvas.height = 128;
-    stampCanvas.width = stampCanvas.height;
-    let stampPixels = drawMojiToFill(stampCanvas, moj);
-    initStamp(stampCanvas);
-
     let bigCanvas = document.getElementById("canvas");
 
     let baseX = 100;
     let baseY = 100;
     let bigCtx = bigCanvas.getContext("2d");
-    let depth = 10;
-    if (g_frame == 0)
+    let depth = g_depth;
+
+    let MOJI_SIZE = 128;
+
+    for (let deepz = depth; deepz >= 0; deepz--)
+    //let deepz = g_frame;
     {
-        bigCtx.clearRect(baseX, baseY, stampCanvas.width + depth, stampCanvas.height + depth);
+        if (deepz == g_depth)
+        {
+            initStamp(MOJI_SIZE);
+            bigCtx.clearRect(baseX, baseY, MOJI_SIZE + depth, MOJI_SIZE + depth);
+        }        
+        stamp(g_stampCanvas, bigCanvas, baseX + deepz, baseY - deepz, deepz);
     }
-    //for (let deepz = depth; deepz >= 0; deepz--)
-    let deepz = g_frame;
-    {
-        stamp(stampCanvas, bigCanvas, baseX + deepz, baseY - deepz, deepz);
-    }
-    g_frame = (g_frame + 1) % depth;
+    if (g_frame <= 0) g_frame = depth;
+    else g_frame--;
     //let lilPixels = drawMojiToFill(lilCanvas, moj);
 }
 
@@ -574,9 +592,12 @@ function testCaman()
 }
 
 
+function INIT_CLIPBOARD()
+{
+    g_CLIPBOARD = new CLIPBOARD_CLASS("pasty_canvas", true);
+}
 
-//var CLIPBOARD = new CLIPBOARD_CLASS("pasty_canvas", true);
-
+var g_CLIPBOARD;
 /**
  * image pasting into canvas
  * 

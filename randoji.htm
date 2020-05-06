@@ -6,7 +6,7 @@
 
 <link href="styles/Randoji.css" rel="stylesheet" />
 </head>
-<body onload="INIT_CLIPBOAD();">
+<body onload="INIT_CLIPBOARD();">
 	<script src="script/emoji_json.js"></script>
 	<script src="script/randoji.js"></script>
 
@@ -60,6 +60,12 @@
 	<input type="range"  id="planeA" oninput="g_distanceA = this.value / 1.0;" min="0" max="100" value="20" style="width:100%;"/>
 	<input type="range"  id="planeB" oninput="g_distanceB = this.value / 1.0;" min="0" max="100" value="40" style="width:100%;"/>
 </div>
+<div>
+	<input type="range"  id="panslider" oninput="sliderChange(this.value)" min="0" max="100" style="width:100%;"/>
+	<input type="range"  id="planeA" oninput="g_distanceA = this.value / 1.0;" min="0" max="100" value="20" style="width:100%;"/>
+	<input type="range"  id="planeB" oninput="g_distanceB = this.value / 1.0;" min="0" max="100" value="40" style="width:100%;"/>
+</div>
+
 <div style="position:relative">
 	<canvas height="512" width="512" id="canvas"  style="position:absolute"></canvas>
 	<canvas height="512" width="512" id="canvas1" style="position:absolute;top:2px;left:2px;"></canvas>
