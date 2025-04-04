@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3D Lego Physics Playground</title>
+  <style>
+    body { margin: 0; background: #111; overflow: hidden; font-family: sans-serif; }
+    #gui-container { position: absolute; top: 10px; right: 10px; z-index: 10; }
+  </style>
+</head>
+<body>
+  <div id="gui-container"></div>
+  <canvas id="viewer"></canvas>
+
+  <!-- Three.js, OrbitControls, dat.GUI -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.min.js"></script>
+  
+  <!-- Rapier Physics (using Rapier3D-compat) -->
+  <script src="https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.12.0/dist/rapier3d-compat.js"></script>
+  
+  <!-- Postprocessing (EffectComposer, RenderPass, BloomPass) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/postprocessing/BloomPass.js"></script>
+
+  <script>
+    // ----- Global Variables & Settings -----
+    const GRID_UNIT = 1; // Fine grid unit
+    let physicsWorld;
+    const physicsBoxes = []; // Each entry: { mesh, body, base: {x,y,z}, size: {w,h,d} }
+    const gridToBox = {};    // Map: "x,y,z" → box object (for each occupied cell)
+    const occupied = new Set(); // Set of occupied grid cell keys
+
+    // ----- Audio Setup (for click/pop sound) -----
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playClickSound() {
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.1);
+    }
+
+    // ----- Three.js Scene Setup -----
+    const canvas = document.getElementById("viewer");
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x111111);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(10, 10, 15);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    // Lights
+    scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+    const d1 = new THREE.DirectionalLight(0xff00aa, 0.5);
+    d1.position.set(5, 5, 5);
+    scene.add(d1);
+    const d2 = new THREE.DirectionalLight(0x00ffff, 0.5);
+    d2.position.set(-5, -5, 5);
+    scene.add(d2);
+
+    // ----- Postprocessing Setup (Bloom effect) -----
+    const composer = new THREE.EffectComposer(renderer);
+    const renderPass = new THREE.RenderPass(scene, camera);
+    composer.addPass(renderPass);
+    const bloomPass = new THREE.BloomPass(1.25); // Adjust intensity as desired
+    composer.addPass(bloomPass);
+
+    // ----- Raycaster for Click Interactivity -----
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    // ----- Utility Functions -----
+    // Convert grid coordinates to a string key
+    function posKey(x, y, z) {
+      return `${x},${y},${z}`;
+    }
+    // Get random size in grid units (each dimension 1 or 2 units)
+    function getRandomSize() {
+      return {
+        w: Math.floor(Math.random() * 2) + 1,
+        h: Math.floor(Math.random() * 2) + 1,
+        d: Math.floor(Math.random() * 2) + 1,
+      };
+    }
+
+    // ----- Create a Box at a Given Grid Base Position -----
+    // neighborData: { neighbor, direction } where direction is an array [dx,dy,dz]
+    function createBoxAt(x, y, z, size, neighborData) {
+      const { w, h, d } = size;
+      // Create Three.js mesh (centered automatically)
+      const geometry = new THREE.BoxGeometry(w, h, d);
+      const material = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(Math.random(), Math.random(), Math.random()),
+        roughness: 0.3,
+        metalness: 0.6
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      // Position the mesh so its base aligns with (x,y,z)
+      mesh.position.set(x + w/2, y + h/2, z + d/2);
+      scene.add(mesh);
+
+      // Create Rapier physics body and collider
+      const bodyDesc = RAPIER.RigidBodyDesc.dynamic().setTranslation(mesh.position.x, mesh.position.y, mesh.position.z);
+      const body = physicsWorld.createRigidBody(bodyDesc);
+      const colliderDesc = RAPIER.ColliderDesc.cuboid(w/2, h/2, d/2);
+      physicsWorld.createCollider(colliderDesc, body);
+
+      // Package our box object
+      const boxObj = { mesh, body, base: {x, y, z}, size };
+      physicsBoxes.push(boxObj);
+
+      // Mark each occupied grid cell for this box
+      for (let dx = 0; dx < w; dx++) {
+        for (let dy = 0; dy < h; dy++) {
+          for (let dz = 0; dz < d; dz++) {
+            const key = posKey(x + dx, y + dy, z + dz);
+            occupied.add(key);
+            gridToBox[key] = boxObj;
+          }
+        }
+      }
+
+      // If a neighbor is provided, create a fixed joint to "snap" the boxes together
+      if (neighborData) {
+        const { neighbor, direction } = neighborData;
+        // Determine local anchor points for the fixed joint
+        let newAnchor = new RAPIER.Vector3(0, 0, 0);
+        let neighborAnchor = new RAPIER.Vector3(0, 0, 0);
+        if (direction[0] !== 0) {
+          newAnchor.x = (direction[0] > 0) ? -w/2 : w/2;
+          neighborAnchor.x = (direction[0] > 0) ? neighbor.size.w/2 : -neighbor.size.w/2;
+        } else if (direction[1] !== 0) {
+          newAnchor.y = (direction[1] > 0) ? -h/2 : h/2;
+          neighborAnchor.y = (direction[1] > 0) ? neighbor.size.h/2 : -neighbor.size.h/2;
+        } else if (direction[2] !== 0) {
+          newAnchor.z = (direction[2] > 0) ? -d/2 : d/2;
+          neighborAnchor.z = (direction[2] > 0) ? neighbor.size.d/2 : -neighbor.size.d/2;
+        }
+        // Create fixed joint between the new box and the neighbor
+        const jointDesc = RAPIER.JointData.fixed(newAnchor, neighborAnchor);
+        physicsWorld.createImpulseJoint(boxObj.body, neighbor.body, jointDesc, true);
+      }
+    }
+
+    // ----- Determine Free Adjacent Positions (for connecting new boxes) -----
+    function getAdjacentPositions() {
+      const adj = new Set();
+      const directions = [
+        [1,0,0], [-1,0,0],
+        [0,1,0], [0,-1,0],
+        [0,0,1], [0,0,-1],
+      ];
+      occupied.forEach(key => {
+        const [x, y, z] = key.split(',').map(Number);
+        directions.forEach(dir => {
+          const newKey = posKey(x + dir[0], y + dir[1], z + dir[2]);
+          if (!occupied.has(newKey)) {
+            adj.add(newKey);
+          }
+        });
+      });
+      // Return free positions as [x,y,z] arrays
+      return Array.from(adj).map(k => k.split(',').map(Number));
+    }
+
+    // ----- Add a New Connected Box -----
+    function addConnectedBox() {
+      const freePositions = getAdjacentPositions();
+      if (freePositions.length === 0) return;
+      // Choose a random free grid cell as the new box’s base
+      const [x, y, z] = freePositions[Math.floor(Math.random() * freePositions.length)];
+      const size = getRandomSize();
+      
+      // Find a neighbor for connection by checking adjacent cells to (x,y,z)
+      const directions = [
+        [1,0,0], [-1,0,0],
+        [0,1,0], [0,-1,0],
+        [0,0,1], [0,0,-1],
+      ];
+      let neighborData = null;
+      for (const dir of directions) {
+        // Look one cell in the opposite direction (the box already there)
+        const neighborKey = posKey(x + (dir[0] * -1), y + (dir[1] * -1), z + (dir[2] * -1));
+        if (occupied.has(neighborKey)) {
+          neighborData = { neighbor: gridToBox[neighborKey], direction: dir };
+          break;
+        }
+      }
+      createBoxAt(x, y, z, size, neighborData);
+    }
+
+    // ----- GUI Controls -----
+    const gui = new dat.GUI({ width: 250 });
+    document.getElementById("gui-container").appendChild(gui.domElement);
+    const settings = {
+      boxesToAdd: 1,
+      addBoxes: () => {
+        for (let i = 0; i < settings.boxesToAdd; i++) {
+          addConnectedBox();
+        }
+      },
+      clearAll: () => {
+        physicsBoxes.forEach(b => {
+          scene.remove(b.mesh);
+          physicsWorld.removeRigidBody(b.body);
+        });
+        physicsBoxes.length = 0;
+        for (let key in gridToBox) delete gridToBox[key];
+        occupied.clear();
+        seedInitialBox();
+      },
+      background: '#111111'
+    };
+    gui.add(settings, 'boxesToAdd', 1, 99, 1).name("Boxes per click");
+    gui.add(settings, 'addBoxes').name("Add Connected Box(es)");
+    gui.add(settings, 'clearAll').name("Reset Scene");
+    gui.addColor(settings, 'background').onChange(val => {
+      scene.background = new THREE.Color(val);
+    });
+
+    // ----- Seed the Scene with an Initial Box -----
+    function seedInitialBox() {
+      const size = getRandomSize();
+      createBoxAt(0, 0, 0, size, null);
+    }
+
+    // ----- Initialize Rapier Physics and Start Animation -----
+    RAPIER.init().then(() => {
+      // Create a physics world with zero gravity (so boxes remain in place unless clicked)
+      physicsWorld = new RAPIER.World({ x: 0, y: 0, z: 0 });
+      seedInitialBox();
+      animate();
+    });
+
+    // ----- Handle Mouse Clicks: Apply an Impulse & Play Sound -----
+    renderer.domElement.addEventListener('click', (event) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(physicsBoxes.map(b => b.mesh));
+      if (intersects.length > 0) {
+        const hitMesh = intersects[0].object;
+        const boxObj = physicsBoxes.find(b => b.mesh === hitMesh);
+        if (boxObj) {
+          // Apply a random impulse to the physics body
+          const impulse = { x: (Math.random()-0.5)*5, y: (Math.random()-0.5)*5, z: (Math.random()-0.5)*5 };
+          boxObj.body.applyImpulse(impulse, true);
+          playClickSound();
+        }
+      }
+    });
+
+    // ----- Animation Loop -----
+    function animate() {
+      requestAnimationFrame(animate);
+      physicsWorld.step();  // Step the physics simulation
+      // Update Three.js meshes to match their physics bodies
+      physicsBoxes.forEach(boxObj => {
+        const pos = boxObj.body.translation();
+        const rot = boxObj.body.rotation();
+        boxObj.mesh.position.set(pos.x, pos.y, pos.z);
+        boxObj.mesh.quaternion.set(rot.x, rot.y, rot.z, rot.w);
+      });
+      controls.update();
+      composer.render();
+    }
+
+    // ----- Responsive Resize -----
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // ----- Electron Integration Note -----
+    // To wrap this in Electron, create a main.js file that creates a BrowserWindow loading this index.html,
+    // and include electron as a dependency in package.json.
+    // For example, your main.js might look like:
+    /*
+    const { app, BrowserWindow } = require('electron');
+    function createWindow () {
+      const win = new BrowserWindow({
+        width: 800,
+        height: 600,
+        webPreferences: { nodeIntegration: false, contextIsolation: true }
+      });
+      win.loadFile('index.html');
+    }
+    app.whenReady().then(createWindow);
+    */
+  </script>
+</body>
+</html>
