@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Interactive 2D Canvas with Color Palettes</title>
+  <style>
+    body {
+      display: flex;
+      margin: 0;
+      overflow: hidden;
+    }
+    #palette-strip {
+      display: flex;
+      flex-direction: column;
+      width: 100px;
+      overflow-y: auto;
+    }
+    .palette-image {
+      width: 100%;
+      cursor: pointer;
+    }
+    #canvas-container {
+      flex-grow: 1;
+      position: relative;
+    }
+    #main-canvas {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+
+<div id="palette-strip">
+  <!-- Art images will be loaded here -->
+</div>
+
+<div id="canvas-container">
+  <canvas id="main-canvas"></canvas>
+</div>
+
+<script>
+  const paletteStrip = document.getElementById('palette-strip');
+  const canvas = document.getElementById('main-canvas');
+  const ctx = canvas.getContext('2d');
+  let currentPalette = [];
+
+  // Load art images into the palette strip
+  for (let i = 1; i <= 5; i++) {
+    const img = new Image();
+    img.src = `art${i}.jpg`;
+    img.classList.add('palette-image');
+    img.onload = () => {
+      paletteStrip.appendChild(img);
+    };
+    img.onclick = () => {
+      extractPalette(img);
+    };
+  }
+
+  // Function to extract color palette from an image
+  function extractPalette(image) {
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCanvas.width = 16;
+    tempCanvas.height = 16;
+    tempCtx.drawImage(image, 0, 0, 16, 16);
+    const imageData = tempCtx.getImageData(0, 0, 16, 16).data;
+    const colors = [];
+    for (let i = 0; i < imageData.length; i += 4) {
+      const r = imageData[i];
+      const g = imageData[i + 1];
+      const b = imageData[i + 2];
+      colors.push({ r, g, b });
+    }
+    currentPalette = colors;
+    applyPalette();
+  }
+
+  // Function to apply the current palette to the canvas
+  function applyPalette() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const rectWidth = 50;
+    const rectHeight = 50;
+    let colorIndex = 0;
+    for (let y = 0; y < canvas.height; y += rectHeight) {
+      for (let x = 0; x < canvas.width; x += rectWidth) {
+        if (colorIndex >= currentPalette.length) colorIndex = 0;
+        const color = currentPalette[colorIndex];
+        ctx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+        ctx.fillRect(x, y, rectWidth, rectHeight);
+        colorIndex++;
+      }
+    }
+  }
+
+  // Adjust canvas size
+  function resizeCanvas() {
+    canvas.width = window.innerWidth - paletteStrip.offsetWidth;
+    canvas.height = window.innerHeight;
+    if (currentPalette.length > 0) {
+      applyPalette();
+    }
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+</script>
+
+</body>
+</html>
